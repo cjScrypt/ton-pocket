@@ -1,0 +1,2 @@
+const WRONG_OP = 0xffff;
+const WRONG_WORKCHAIN = 333;

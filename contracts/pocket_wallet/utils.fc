@@ -1,0 +1,31 @@
+() force_workchain_0(slice addr, int error_code) impure inline {
+    (int wc, _) = parse_std_addr(addr);
+    throw_unless(error_code, wc == WORKCHAIN);
+}
+
+cell pack_pocket_wallet_data(int ton_balance, slice owner_address, slice jetton_master_address, cell jetton_wallet_code, int usdt_balance) inline {
+    return begin_cell()
+            .store_coins(ton_balance)
+            .store_slice(owner_address)
+            .store_slice(jetton_master_address)
+            .store_ref(jetton_wallet_code)
+            .store_coins(usdt_balance)
+           .end_cell();
+}
+
+cell calculate_pocket_wallet_state_init(slice owner_address, slice jetton_master_address, cell jetton_wallet_code) inline {
+    return begin_cell()
+            .store_uint(0, 2)
+            .store_dict(jetton_wallet_code)
+            .store_dict(pack_pocket_wallet_data(0, owner_address, jetton_master_address, jetton_wallet_code, 0))
+            .store_uint(0, 1)
+           .end_cell();
+}
+
+slice calculate_pocket_wallet_address(cell state_init) inline {
+    return begin_cell()
+            .store_uint(4, 3)
+            .store_int(WORKCHAIN, 8)
+            .store_uint(cell_hash(state_init), 256)
+           .end_cell().begin_parse();
+}
