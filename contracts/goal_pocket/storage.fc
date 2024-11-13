@@ -1,0 +1,15 @@
+(int, int, slice, int, int) load_storage () inline {
+    slice ds = get_data().begin_parse();
+    return (ds~load_coins(), ds~load_coins(), ds~load_msg_addr(), ds~load_uint(32), ds~load_uint(32));
+}
+
+() save_storage (int total, int target, slice owner_address, int start_time, int duration) impure inline {
+    set_data(begin_cell()
+        .store_coins(total)
+        .store_coins(target)
+        .store_slice(owner_address)
+        .store_uint(start_time, 32)
+        .store_uint(duration, 32)
+      .end_cell()
+    );
+}
