@@ -2,6 +2,6 @@ const op::transfer_usdt = 0xf8a7ea5;
 const op::transfer_ton = 0xf8a7ea6;
 const op::transfer_notification = 0x7362d09c;
 const op::internal_transfer = 0x178d4519;
-const excesses = 0xd53276db;
+const op::excesses = 0xd53276db;
 const op::burn = 0x595f07bc;
 const op::burn_notification = 0x7bdd97de;

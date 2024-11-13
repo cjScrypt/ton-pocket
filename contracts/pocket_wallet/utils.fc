@@ -3,13 +3,13 @@
     throw_unless(error_code, wc == WORKCHAIN);
 }
 
-cell pack_pocket_wallet_data(int ton_balance, slice owner_address, slice jetton_master_address, cell jetton_wallet_code, int usdt_balance) inline {
+cell pack_pocket_wallet_data(int spendable_balance, slice owner_address, slice jetton_master_address, cell jetton_wallet_code, int locked_balance) inline {
     return begin_cell()
-            .store_coins(ton_balance)
+            .store_coins(spendable_balance)
             .store_slice(owner_address)
             .store_slice(jetton_master_address)
             .store_ref(jetton_wallet_code)
-            .store_coins(usdt_balance)
+            .store_coins(locked_balance)
            .end_cell();
 }
 
