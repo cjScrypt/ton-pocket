@@ -1,0 +1,2 @@
+const op::fund_goal = 0xf7ab037;
+const op::fund_goal_from_pocket = 0xf7ab038;

@@ -1,0 +1,29 @@
+#include "imports/stdlib.fc";
+
+() recv_internal(int my_balance, int msg_value, cell in_msg_full, slice in_msg_body) impure {
+    if (in_msg_body.slice_empty?()) {
+        return ();
+    }
+
+    slice cs = in_msg_full.begin_parse();
+    int flags = cs~load_uint(4);
+
+    if (flags & 1) {
+        ;; TODO: Handle bounced messages
+        return ();
+    }
+
+    (int total, int target, slice owner_address, int start_time, int duration) = load_storage();
+
+    slice sender_address = cs~load_msg_addr();
+    int op = in_msg_body~load_uint(32);
+
+    if (op == op::fund_goal) {
+
+    }
+
+    if (op == op::fund_goal_from_pocket) {
+
+    }
+
+}

@@ -1,5 +1,4 @@
-const op::transfer_usdt = 0xf8a7ea5;
-const op::transfer_ton = 0xf8a7ea6;
+const op::transfer = 0xf8a7ea5;
 const op::transfer_notification = 0x7362d09c;
 const op::internal_transfer = 0x178d4519;
 const op::excesses = 0xd53276db;

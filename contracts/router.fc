@@ -5,8 +5,22 @@
         return ();
     }
 
-    var cs = in_msg_full.begin_parse();
-    var flags = cs~load_uint(4);
+    slice cs = in_msg_full.begin_parse();
+    int flags = cs~load_uint(4);
 
-    
+    if (flags & 1) {
+        return ();
+    }
+
+    slice sender_address = cs~load_msg_addr();
+
+    int op = in_msg_body~load_uint(32);
+
+    if (op == op::transfer_notification) {
+
+    }
+
+    if (op == op::pay_to) {
+
+    }
 }
