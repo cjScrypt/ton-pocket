@@ -1,0 +1,16 @@
+global cell storage::goal_pocket_code;
+global cell storage::mint_code;
+
+() load_storage () impure inline {
+    slice ds = get_data().begin_parse();
+    storage::goal_pocket_code = ds~load_ref();
+    storage::mint_code = ds~load_ref();
+}
+
+() save_storage () impure inline {
+    set_data(begin_cell()
+        .store_ref(storage::goal_pocket_code)
+        .store_ref(storage::mint_code)
+       .end_cell()
+    );
+}

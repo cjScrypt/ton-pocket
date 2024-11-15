@@ -1,0 +1,4 @@
+() force_workchain_0(slice addr, int error_code) impure inline {
+    (int wc, _) = parse_std_addr(addr);
+    throw_unless(error_code, wc == WORKCHAIN);
+}

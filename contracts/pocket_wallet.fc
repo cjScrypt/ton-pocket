@@ -1,4 +1,4 @@
-#include "imports/stdlib.fc";
+#include "common/stdlib.fc";
 #include "pocket_wallet/errors.fc";
 #include "pocket_wallet/op.fc";
 #include "pocket_wallet/utils.fc";
@@ -34,10 +34,10 @@
     var msg_body = begin_cell()
       .store_uint(op::internal_transfer, 32)
       .store_uint(query_id, 64)
-      .store_uint(0, 2)
       .store_coins(jetton_amount)
       .store_slice(owner_address)
       .store_slice(response_address)
+      .store_dict(custom_payload)
       .store_coins(forward_ton_amount)
       .store_slice(either_forward_payload)
      .end_cell();
@@ -57,13 +57,7 @@
 () receive_tokens (slice in_msg_body, slice sender_address, int my_ton_balance, int fwd_fee, int msg_value) impure {
     (int spendable_balance, slice owner_address, slice jetton_master_address, cell jetton_wallet_code, int locked_balance) = load_storage();
     int query_id = in_msg_body~load_uint(64);
-    int lock? = in_msg_body~load_uint(2); ;; 0 to increase spendable balance, 1 to increase locked_balance
     int jetton_amount = in_msg_body~load_coins();
-    if (lock? == 0) {
-        spendable_balance += jetton_amount;
-    } else {
-        locked_balance += jetton_amount;
-    }
     slice from_address = in_msg_body~load_msg_addr();
     slice response_address = in_msg_body~load_msg_addr();
     throw_unless(707,
@@ -71,10 +65,13 @@
         |
         equal_slices(calculate_user_pocket_wallet_address(from_address, jetton_master_address, jetton_wallet_code), sender_address)
     );
+    slice custom_payload = in_msg_body~load_dict();
+
     int forward_ton_amount = in_msg_body~load_coins();
     int ton_balance_before_msg = my_ton_balance - msg_value;
     int storage_fee = REQUIRED_TON_STORAGE - min(ton_balance_before_msg, REQUIRED_TON_STORAGE);
     msg_value -= (storage_fee + REQUIRED_GAS);
+
     if (forward_ton_amount) {
         msg_value -= (forward_ton_amount + fwd_fee);
         slice either_forward_payload = in_msg_body;
@@ -92,20 +89,27 @@
             .store_uint(1, 1 + 4 + 4 + 64 + 32 + 1 + 1)
             .store_ref(msg_body);
         send_raw_message(msg.end_cell(), 1);
-
-        if ((response_address.preload_uint(2) != 0) & (msg_value > 0)) {
-            var msg = begin_cell()
-              .store_uint(0x10, 6)
-              .store_slice(response_address)
-              .store_coins(msg_value)
-              .store_uint(0, 1 + 4 + 4 + 64 + 32 + 1 + 1)
-              .store_uint(op::excesses, 32)
-              .store_uint(query_id, 64);
-            send_raw_message(msg.end_cell(), 2);
-        }
-
-        save_storage(spendable_balance, owner_address, jetton_master_address, jetton_wallet_code, locked_balance);
     }
+
+    if (custom_payload.dict_empty?()) {
+        spendable_balance += jetton_amount;
+    } else {
+        locked_balance += jetton_amount;
+        send_update_goal_message(custom_payload, msg_value);
+    }
+
+    if ((response_address.preload_uint(2) != 0) & (msg_value > 0)) {
+        var msg = begin_cell()
+          .store_uint(0x10, 6)
+          .store_slice(response_address)
+          .store_coins(msg_value)
+          .store_uint(0, 1 + 4 + 4 + 64 + 32 + 1 + 1)
+          .store_uint(op::excesses, 32)
+          .store_uint(query_id, 64);
+        send_raw_message(msg.end_cell(), 2);
+    }
+
+    save_storage(spendable_balance, owner_address, jetton_master_address, jetton_wallet_code, locked_balance);
 }
 
 

@@ -1,2 +1,4 @@
 const op::transfer_notification = 0x7362d09c;
 const op::pay_to = 0xf7ab038d;
+const op::fund_user = 0xbbbbbbb0;
+const op::fund_goal = 0xbbbbbbb1;

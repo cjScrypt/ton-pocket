@@ -1,0 +1,19 @@
+global slice storage::router_address;
+global slice storage::router_usdt_address;
+global cell storage::pocket_wallet_code;
+
+() load_storage() impure inline {
+    slice ds = get_data().begin_parse();
+    storage::router_address = ds~load_msg_addr();
+    storage::router_usdt_address = ds~load_msg_addr();
+    storage::pocket_wallet_code = ds~load_ref();
+}
+
+() save_storage () impure inline {
+    set_data(begin_cell()
+            .store_slice(storage::router_address)
+            .store_slice(storage::router_usdt_address)
+            .store_ref(storage::pocket_wallet_code)
+           .end_cell()
+    );
+}

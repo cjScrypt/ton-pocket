@@ -1,0 +1,10 @@
+
+(cell) get_mint_state_init(slice token_address) inline {
+
+}
+
+(cell, slice) get_mint_address(slice usdt_address) inline {
+    return begin_cell()
+            .store_uint(0, 2)
+            .store_dict()
+}
