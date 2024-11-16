@@ -1,6 +1,8 @@
 #include "common/stdlib.fc";
 #include "common/errors.fc";
 #include "common/utils.fc";
+#include "router/storage.fc";
+#include "router/utils.fc";
 
 
 () recv_internal(int my_balance, int msg_value, cell in_msg_full, slice in_msg_body) impure {
@@ -15,23 +17,34 @@
         return ();
     }
 
+    load_storage();
     slice sender_address = cs~load_msg_addr();
 
     (int op, int query_id) = (in_msg_body~load_uint(32), in_msg_body~load_uint(64));
 
     if (op == op::transfer_notification) {
         (int jetton_amount, slice from_user) = (in_msg_body~load_coins(), in_msg_body~load_slice());
-        cell ref_cs = in_msg_body~load_ref();
+        cell ref_ds = in_msg_body~load_ref();
         slice ref_ds = ref_cs.begin_parse();
 
         throw_unless(INVALID_AMOUNT, jetton_amount > 0);
 
-        (int ref_ds::op, slice token_wallet) = (ref_ds~load_uint(32), ref_ds~load_msg_addr());
+        (int ref_ds::op, slice recipient_address, cell custom_payload) = (ref_ds~load_uint(32), ref_ds~load_msg_addr(), ref_ds~load_dict());
         force_chain_0(token_wallet, WRONG_WORKCHAIN);
-        ;; TODO: Check if call is valid
         if (ref_ds::op == op::fund_user) {
+            slice mint_address = calculate_mint_address(sender_address);
+            cell msg_body = begin_cell()
+                .store_uint(op::mint, 32)
+                .store_uint(query_id, 64)
+                .store_slice(recipient_address)
+                .store_coins(jetton_amount)
+                .store_dict(custom_payload)
+               .end_cell();
             
+            send_simple_message(0, mint_address, msg_body, CARRY_REMAINING_GAS);
         }
+
+        return ();
     }
 
     if (op == op::pay_to) {

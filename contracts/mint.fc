@@ -12,5 +12,24 @@
         return ();
     }
 
-    
+    load_storage();
+
+    slice sender_address = cs~load_msg_addr();
+
+    (int op, int query_id) = (in_msg_body~load_uint(32), in_mdg_body~load_uint(64));
+
+    if (op == op::burn_notification) {
+
+    }
+
+    if (op == op::mint) {
+        throw_unless(73, equal_slices(sender_address, storage::router_address));
+        slice to_address = in_msg_body~load_msg_addr();
+        int amount = in_msg_body~load_coins();
+        
+    }
+}
+
+slice get_wallet_address(slice owner_address) method_id {
+
 }
