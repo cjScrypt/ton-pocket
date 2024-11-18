@@ -3,6 +3,8 @@
 #include "common/params.fc";
 #include "common/wallet-utils.fc";
 #include "pocket_wallet/errors.fc";
+#include "pocket_wallet/params.fc";
+#include "pocket_wallet/utils.fc";
 #include "pocket_wallet/op.fc";
 
 
@@ -97,7 +99,10 @@
         spendable_balance += jetton_amount;
     } else {
         locked_balance += jetton_amount;
-        send_update_goal_message(custom_payload, msg_value);
+        if(custom_payload.dict_empty?()) {
+            throw(EMPTY_GOAL_PAYLOAD);
+        }
+        send_update_goal_message(jetton_amount, owner_address, custom_payload);
     }
 
     if ((response_address.preload_uint(2) != 0) & (msg_value > 0)) {

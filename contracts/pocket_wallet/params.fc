@@ -1,5 +1,10 @@
-const TOKEN_TON = 0;
-const TOKEN_USDT = 1;
+const TOKEN_USDT = 0;
 
 const REQUIRED_TON_STORAGE = 10000000;
 const REQUIRED_GAS = 10000000;
+
+;; Custom payload dict keys
+const GOAL_ID = 2301;
+const TARGET_AMOUNT = 2302;
+const START_TIME = 2303;
+const DURATION = 2304;
