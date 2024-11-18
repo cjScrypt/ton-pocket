@@ -1,0 +1,37 @@
+() mint_tokens(slice to_address, int jetton_amount, cell custom_payload) impure {
+    cell state_init = calculate_pocket_wallet_state_init(to_address, my_address(), storage::pocket_wallet_code);
+    slice to_pocket_wallet_address = calculate_pocket_wallet_address(state_init);
+    cell msg_body = begin_cell()
+        .store_uint(op::internal_transfer, 32)
+        .store_uint(query_id, 64)
+        .store_uint(jetton_amount)
+        .store_slice(my_address())
+        .store_slice(to_address)
+        .store_dict(custom_payload)
+        .store_coins(0)
+        .store_uint(0, 1)
+       .end_cell();
+    cell msg = begin_cell()
+        .store_uint(0x18, 6)
+        .store_slice(to_pocket_wallet_address)
+        .store_coins()
+        .store_uint(4 + 2 + 1, 1 + 4 + 4 + 64 + 32 + 1 + 1 + 1)
+        .store_ref(state_init)
+        .store_ref(msg_body)
+       .end_cell();
+    send_raw_message(msg, 64);
+}
+
+
+() call_pay_to(int jetton_amount, slice to_address, slice response_address, int query_id) impure {
+    cell body = begin_cell()
+        .store_uint(op::pay_to, 32)
+        .store_uint(query_id, 64)
+        .store_slice(storage::router_usdt_address)
+        .store_coins(jetton_amount)
+        .store_slice(to_address)
+        .store_slice(response_address)
+       .end_cell();
+    
+    send_message_nobounce(0, storage::router_address, body, 64);
+}
