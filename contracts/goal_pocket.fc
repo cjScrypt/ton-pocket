@@ -17,13 +17,17 @@
     (int total, int target, slice owner_address, int start_time, int duration) = load_storage();
 
     slice sender_address = in_msg_body~load_msg_addr();
-    int op = in_msg_body~load_uint(32);
+    (int op, int query_id) = (in_msg_body~load_uint(32), in_msg_body~load_uint(64));
 
-    if (op == op::fund_goal) {
+    if (op == op::add_contribution) {
 
     }
 
-    if (op == op::fund_goal_from_pocket) {
+    if (op == op::unlock) {
+        ;;
+    }
+
+    if (op == op::force_unlock) {
 
     }
 
