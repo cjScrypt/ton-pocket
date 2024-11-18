@@ -1,8 +1,9 @@
 #include "common/stdlib.fc";
+#include "common/errors.fc";
 #include "common/params.fc";
+#include "common/wallet-utils.fc";
 #include "pocket_wallet/errors.fc";
 #include "pocket_wallet/op.fc";
-#include "pocket_wallet/utils.fc";
 
 
 () send_tokens (slice in_msg_body, slice sender_address, int msg_value, int fwd_fee) impure {
