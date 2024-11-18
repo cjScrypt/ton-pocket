@@ -1,5 +1,6 @@
 cell pack_mint_data(slice usdt_address) inline {
     return begin_cell()
+            .store_coins(0)
             .store_slice(my_address)
             .store_slice(usdt_address)
             .store_ref(storage::pocket_wallet_code)

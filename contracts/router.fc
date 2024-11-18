@@ -40,7 +40,7 @@
                 .store_coins(jetton_amount)
                 .store_dict(custom_payload)
                .end_cell();
-            
+
             send_simple_message(0, mint_address, msg_body, CARRY_REMAINING_GAS);
         }
 
@@ -48,6 +48,22 @@
     }
 
     if (op == op::pay_to) {
+        slice usdt_address = in_msg_body~load_msg_addr();
+        slice mint_address = calculate_mint_address(usdt_address);
+        throw_unless(INVALID_CALLER, equal_slices(mint_address, sender_address));
+        
+        (int amount, slice to_address, slice response_address) = (in_msg_body~load_coins(), in_msg_body~load_msg_addr(), in_msg_body~load_msg_addr());
 
+        cell msg_body = begin_cell()
+            .store_uint(op::transfer, 32)
+            .store_uint(query_id, 64)
+            .store_coins(amount)
+            .store_slice(to_address)
+            .store_slice(to_address)
+            .store_uint(0, 1)
+            .store_coins(0)
+            .store_uint(0, 1)
+           .end_cell();
+        send_simple_message(0, to_address, msg_body, 64);
     }
 }
