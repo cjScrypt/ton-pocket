@@ -32,6 +32,6 @@
         .store_slice(to_address)
         .store_slice(response_address)
        .end_cell();
-    
+
     send_message_nobounce(0, storage::router_address, body, 64);
 }
