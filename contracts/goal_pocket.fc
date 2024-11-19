@@ -43,4 +43,20 @@
             send_raw_message(msg, 2);
         }
     }
+
+    if (op == op::unlock) {
+        int amount = in_msg_body~load_coins();
+        throw_unless(INVALID_CALLER, equal_slices(sender_address, owner_address));
+        throw_unless(INSUFFICIENT_FUNDS, amount > contributed_amount);
+
+        contributed_amount -= amount;
+        cell msg_body = begin_cell()
+            .store_uint(op::unlock, 32)
+            .store_uint(query_id, 64)
+            .store_coins(amount)
+        .end_cell();
+
+        save_storage(goal_id, contributed_amount, target, owner_address, pocket_wallet_address, start_time, duration);
+        send_simple_message(0, pocket_wallet_address, msg_body, 64);
+    }
 }
