@@ -4,6 +4,7 @@ cell pack_pocket_wallet_data(int goal_id, int target_amount, owner_address, int 
             .store_coins(0)
             .store_coins(target_amount)
             .store_slice(owner_address)
+            .store_slice(my_address())
             .store_uint(start_time, 32)
             .store_uint(duration, 32)
            .end_cell();

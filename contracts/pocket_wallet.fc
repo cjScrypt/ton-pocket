@@ -106,14 +106,15 @@
     }
 
     if ((response_address.preload_uint(2) != 0) & (msg_value > 0)) {
-        var msg = begin_cell()
-          .store_uint(0x10, 6)
-          .store_slice(response_address)
-          .store_coins(msg_value)
-          .store_uint(0, 1 + 4 + 4 + 64 + 32 + 1 + 1)
-          .store_uint(op::excesses, 32)
-          .store_uint(query_id, 64);
-        send_raw_message(msg.end_cell(), 2);
+        cell msg = begin_cell()
+            .store_uint(0x10, 6)
+            .store_slice(response_address)
+            .store_coins(msg_value)
+            .store_uint(0, 1 + 4 + 4 + 64 + 32 + 1 + 1)
+            .store_uint(op::excesses, 32)
+            .store_uint(query_id, 64)
+        .end_cell();
+        send_raw_message(msg, 2);
     }
 
     save_storage(spendable_balance, owner_address, jetton_master_address, jetton_wallet_code, locked_balance);
@@ -132,7 +133,7 @@
     throw_unless(706, spendable_balance >= 0);
     throw_unless(707, msg_value > fwd_fee + 2 * REQUIRED_GAS);
 
-    var msg_body = begin_cell()
+    cell msg_body = begin_cell()
         .store_uint(op::burn_notification, 32)
         .store_uint(query_id, 64)
         .store_coins(jetton_amount)
@@ -140,7 +141,7 @@
         .store_slice(response_address)
         .end_cell();
 
-    var msg = begin_cell()
+    cell msg = begin_cell()
         .store_uint(0x18, 6)
         .store_slice(jetton_master_address)
         .store_coins(0)
@@ -153,23 +154,17 @@
 }
 
 
-() unlock_tokens(slice in_msg_body, slice sender_address) {
-
-}
-
-() lock_tokens(slice in_msg_body, slice sender_address) {
-    
-}
-
 () on_bounce (slice in_msg_body) impure {
     in_msg_body~skip_bits(32);
     (int spendable_balance, slice owner_address, slice jetton_master_address, cell jetton_wallet_code, int locked_balance) = load_storage();
     int op = in_msg_body~load_uint(32);
-    throw_unless(709, (op == op::internal_transfer) | (op == op::burn_notification));
+    throw_unless(709, (op == op::internal_transfer) | (op == op::burn_notification) | (op == op::add));
     int query_id = in_msg_body~load_uint(64);
     int jetton_amount = in_msg_body~load_coins();
+    if (op == op::add) {
+        locked_balance -= jetton_amount; ;; Unlock tokens
+    } 
     spendable_balance += jetton_amount;
-
     save_storage(spendable_balance, owner_address, jetton_master_address, jetton_wallet_code, locked_balance);
 }
 
