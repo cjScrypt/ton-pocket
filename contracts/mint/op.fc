@@ -1,5 +1,5 @@
 const op::internal_transfer = 0x178d4519;
-const op::mint = 0xb3a89212;
 const op::mint_locked = 0xb3a89211;
 const op::burn_notification = 0x7bdd97de;
-const op::pay_to = 0xf7ab038d;
+const op::pay_to = 2103;
+const op::mint = 2105;
