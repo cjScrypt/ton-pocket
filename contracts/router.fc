@@ -1,6 +1,8 @@
 #include "common/stdlib.fc";
 #include "common/errors.fc";
+#include "common/params.fc";
 #include "common/utils.fc";
+#include "router/op.fc";
 #include "router/storage.fc";
 #include "router/utils.fc";
 
@@ -23,14 +25,14 @@
     (int op, int query_id) = (in_msg_body~load_uint(32), in_msg_body~load_uint(64));
 
     if (op == op::transfer_notification) {
-        (int jetton_amount, slice from_user) = (in_msg_body~load_coins(), in_msg_body~load_slice());
-        cell ref_ds = in_msg_body~load_ref();
+        (int jetton_amount, slice from_user) = (in_msg_body~load_coins(), in_msg_body~load_msg_addr());
+        cell ref_cs = in_msg_body~load_ref();
         slice ref_ds = ref_cs.begin_parse();
 
         throw_unless(INVALID_AMOUNT, jetton_amount > 0);
 
         (int ref_ds::op, slice recipient_address, cell custom_payload) = (ref_ds~load_uint(32), ref_ds~load_msg_addr(), ref_ds~load_dict());
-        force_chain_0(token_wallet, WRONG_WORKCHAIN);
+        force_workchain_0(sender_address, WRONG_WORKCHAIN);
         if (ref_ds::op == op::fund_user) {
             slice mint_address = calculate_mint_address(sender_address);
             cell msg_body = begin_cell()
@@ -50,7 +52,7 @@
     if (op == op::pay_to) {
         slice usdt_address = in_msg_body~load_msg_addr();
         slice mint_address = calculate_mint_address(usdt_address);
-        throw_unless(INVALID_CALLER, equal_slices(mint_address, sender_address));
+        throw_unless(INVALID_CALLER, equal_slices_bits(mint_address, sender_address));
         
         (int amount, slice to_address, slice response_address) = (in_msg_body~load_coins(), in_msg_body~load_msg_addr(), in_msg_body~load_msg_addr());
 

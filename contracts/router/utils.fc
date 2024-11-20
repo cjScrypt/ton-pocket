@@ -1,24 +1,24 @@
 cell pack_mint_data(slice usdt_address) inline {
     return begin_cell()
             .store_coins(0)
-            .store_slice(my_address)
+            .store_slice(my_address())
             .store_slice(usdt_address)
             .store_ref(storage::pocket_wallet_code)
            .end_cell();
 }
 
 
-slice calculate_mint_address(cell state_init) inline {
+slice calculate_mint_address(slice usdt_address) inline {
     cell state_init = begin_cell()
-            .store_uint(0, 2)
-            .store_uint(storage::mint_code)
-            .store_dict(pack_mint_data(usdt_address))
-            .store_uint(0, 1)
-           .end_cell();
+        .store_uint(0, 2)
+        .store_dict(storage::mint_code)
+        .store_dict(pack_mint_data(usdt_address))
+        .store_uint(0, 1)
+    .end_cell();
 
     return begin_cell()
             .store_uint(4, 3)
             .store_int(WORKCHAIN, 8)
             .store_uint(cell_hash(state_init), 256)
-           .end_cell().begin_parse();
+        .end_cell().begin_parse();
 }
