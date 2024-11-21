@@ -13,7 +13,7 @@
 
 
 () mint_tokens(slice to_address, int jetton_amount, cell custom_payload, int query_id) impure {
-    cell state_init = calculate_pocket_wallet_state_init(to_address, my_address(), storage::pocket_wallet_code);
+    cell state_init = calculate_pocket_wallet_state_init(to_address, my_address(), storage::pocket_wallet_code, storage::goal_pocket_code);
     slice to_pocket_wallet_address = calculate_pocket_wallet_address(state_init);
     cell msg_body = begin_cell()
         .store_uint(op::internal_transfer, 32)

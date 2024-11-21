@@ -29,7 +29,7 @@
     if (op == op::burn_notification) {
         (int jetton_amount, slice from_address) = (in_msg_body~load_coins(), in_msg_body~load_msg_addr());
         throw_unless(74,
-            equal_slices_bits(calculate_user_pocket_wallet_address(from_address, my_address(), storage::pocket_wallet_code), sender_address)
+            equal_slices_bits(calculate_user_pocket_wallet_address(from_address, my_address(), storage::pocket_wallet_code, storage::goal_pocket_code), sender_address)
         );
         throw_unless(INVALID_AMOUNT, jetton_amount > 0);
 
@@ -53,5 +53,5 @@
 
 slice get_wallet_address(slice owner_address) method_id {
     load_storage();
-    return calculate_user_pocket_wallet_address(owner_address, my_address(), storage::pocket_wallet_code);
+    return calculate_user_pocket_wallet_address(owner_address, my_address(), storage::pocket_wallet_code, storage::goal_pocket_code);
 }
