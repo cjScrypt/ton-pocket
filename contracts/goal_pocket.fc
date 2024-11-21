@@ -1,5 +1,8 @@
 #include "common/stdlib.fc";
 #include "common/errors.fc";
+#include "common/params.fc";
+#include "common/utils.fc";
+#include "goal_pocket/errors.fc";
 #include "goal_pocket/op.fc";
 #include "goal_pocket/storage.fc";
 
@@ -25,8 +28,8 @@
     (int op, int query_id) = (in_msg_body~load_uint(32), in_msg_body~load_uint(64));
 
     if (op == op::add) {
-        int amount = in_msg_body~load_coins();
-        throw_unless(INVALID_CALLER, equal_slices(sender_address, pocket_wallet_address));
+        (int amount, slice response_address) = (in_msg_body~load_coins(), in_msg_body~load_msg_addr());
+        throw_unless(INVALID_CALLER, equal_slices_bits(sender_address, pocket_wallet_address));
         throw_unless(GOAL_TARGET_REACHED, contributed_amount < target);
         contributed_amount += amount;
 
@@ -46,14 +49,18 @@
 
     if (op == op::unlock) {
         int amount = in_msg_body~load_coins();
-        throw_unless(INVALID_CALLER, equal_slices(sender_address, owner_address));
+        throw_unless(INVALID_CALLER, equal_slices_bits(sender_address, owner_address));
         throw_unless(INSUFFICIENT_FUNDS, amount > contributed_amount);
 
         contributed_amount -= amount;
         cell msg_body = begin_cell()
             .store_uint(op::unlock, 32)
             .store_uint(query_id, 64)
+            .store_uint(goal_id, 64)
             .store_coins(amount)
+            .store_coins(target)
+            .store_uint(start_time, 32)
+            .store_uint(duration, 32)
         .end_cell();
 
         save_storage(goal_id, contributed_amount, target, owner_address, pocket_wallet_address, start_time, duration);

@@ -1,2 +1,3 @@
 const op::add = 2101;
 const op::unlock = 2102;
+const op::excesses = 0xd53276db;
