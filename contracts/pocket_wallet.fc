@@ -1,11 +1,13 @@
 #include "common/stdlib.fc";
 #include "common/errors.fc";
 #include "common/params.fc";
+#include "common/utils.fc";
 #include "common/wallet-utils.fc";
 #include "pocket_wallet/errors.fc";
 #include "pocket_wallet/params.fc";
-#include "pocket_wallet/utils.fc";
 #include "pocket_wallet/op.fc";
+#include "pocket_wallet/storage.fc";
+#include "pocket_wallet/utils.fc";
 
 
 () send_tokens (slice in_msg_body, slice sender_address, int msg_value, int fwd_fee) impure {
@@ -13,14 +15,14 @@
     int jetton_amount = in_msg_body~load_coins();
     slice to_owner_address = in_msg_body~load_msg_addr();
 
-    force_workchain_0(to_owner_address);
+    force_workchain_0(to_owner_address, WRONG_WORKCHAIN);
 
-    (int spendable_balance, slice owner_address, slice jetton_master_address, cell jetton_wallet_code, int goal_balance) = load_storage();
+    (int spendable_balance, slice owner_address, slice jetton_master_address, cell jetton_wallet_code, cell goal_pocket_code, int goal_balance) = load_storage();
     spendable_balance -= jetton_amount;
-    throw_unless(705, equal_slices(owner_address, sender_address));
+    throw_unless(705, equal_slices_bits(owner_address, sender_address));
     throw_unless(706, spendable_balance >= 0);
 
-    cell state_init = calculate_pocket_wallet_state_init(to_owner_address, jetton_master_address, jetton_wallet_code);
+    cell state_init = calculate_pocket_wallet_state_init(to_owner_address, jetton_master_address, jetton_wallet_code, goal_pocket_code);
     slice to_wallet_address = calculate_pocket_wallet_address(state_init);
     slice response_address = in_msg_body~load_msg_addr();
     cell custom_payload = in_msg_body~load_dict();
@@ -54,22 +56,22 @@
                         (2 * REQUIRED_GAS + REQUIRED_TON_STORAGE)
     );
     send_raw_message(msg.end_cell(), 64);
-    save_storage(spendable_balance, owner_address, jetton_master_address, jetton_wallet_code, goal_balance);
+    save_storage(spendable_balance, owner_address, jetton_master_address, jetton_wallet_code, goal_pocket_code, goal_balance);
 }
 
 
 () receive_tokens (slice in_msg_body, slice sender_address, int my_ton_balance, int fwd_fee, int msg_value) impure {
-    (int spendable_balance, slice owner_address, slice jetton_master_address, cell jetton_wallet_code, int goal_balance) = load_storage();
+    (int spendable_balance, slice owner_address, slice jetton_master_address, cell jetton_wallet_code, cell goal_pocket_code, int goal_balance) = load_storage();
     int query_id = in_msg_body~load_uint(64);
     int jetton_amount = in_msg_body~load_coins();
     slice from_address = in_msg_body~load_msg_addr();
     slice response_address = in_msg_body~load_msg_addr();
     throw_unless(707,
-      equal_slices(jetton_master_address, sender_address)
+      equal_slices_bits(jetton_master_address, sender_address)
         |
-        equal_slices(calculate_user_pocket_wallet_address(from_address, jetton_master_address, jetton_wallet_code), sender_address)
+        equal_slices_bits(calculate_user_pocket_wallet_address(from_address, jetton_master_address, jetton_wallet_code, goal_pocket_code), sender_address)
     );
-    slice custom_payload = in_msg_body~load_dict();
+    cell custom_payload = in_msg_body~load_dict();
 
     int forward_ton_amount = in_msg_body~load_coins();
     int ton_balance_before_msg = my_ton_balance - msg_value;
@@ -99,10 +101,7 @@
         spendable_balance += jetton_amount;
     } else {
         goal_balance += jetton_amount;
-        if(custom_payload.dict_empty?()) {
-            throw(EMPTY_GOAL_PAYLOAD);
-        }
-        send_update_goal_message(jetton_amount, owner_address, custom_payload);
+        send_update_goal_message(jetton_amount, query_id, goal_pocket_code, owner_address, custom_payload);
     }
 
     if ((response_address.preload_uint(2) != 0) & (msg_value > 0)) {
@@ -117,19 +116,19 @@
         send_raw_message(msg, 2);
     }
 
-    save_storage(spendable_balance, owner_address, jetton_master_address, jetton_wallet_code, goal_balance);
+    save_storage(spendable_balance, owner_address, jetton_master_address, jetton_wallet_code, goal_pocket_code, goal_balance);
 }
 
 
 () burn_tokens (slice in_msg_body, slice sender_address, int msg_value, int fwd_fee) impure {
-    (int spendable_balance, slice owner_address, slice jetton_master_address, cell jetton_wallet_code, int goal_balance) = load_storage();
+    (int spendable_balance, slice owner_address, slice jetton_master_address, cell jetton_wallet_code, cell goal_pocket_code, int goal_balance) = load_storage();
     int query_id = in_msg_body~load_uint(64);
     int jetton_amount = in_msg_body~load_coins();
     slice response_address = in_msg_body~load_msg_addr();
     ;; ignore custom payload
     ;; slice custom_payload = in_msg_body~load_dict();
     spendable_balance -= jetton_amount;
-    throw_unless(705, equal_slices(owner_address, sender_address));
+    throw_unless(705, equal_slices_bits(owner_address, sender_address));
     throw_unless(706, spendable_balance >= 0);
     throw_unless(707, msg_value > fwd_fee + 2 * REQUIRED_GAS);
 
@@ -141,7 +140,7 @@
         .store_slice(response_address)
         .end_cell();
 
-    cell msg = begin_cell()
+    builder msg = begin_cell()
         .store_uint(0x18, 6)
         .store_slice(jetton_master_address)
         .store_coins(0)
@@ -150,23 +149,23 @@
 
     send_raw_message(msg.end_cell(), 64);
 
-    save_storage(spendable_balance, owner_address, jetton_master_address, jetton_wallet_code, goal_balance);
+    save_storage(spendable_balance, owner_address, jetton_master_address, jetton_wallet_code, goal_pocket_code, goal_balance);
 }
 
 
 () unlock_tokens(slice in_msg_body, slice sender_address, int msg_value, int fwd_fee) impure {
-    (int spendable_balance, slice owner_address, _, _, int goal_balance) = load_storage();
+    (int spendable_balance, slice owner_address, slice jetton_master_address, cell jetton_wallet_code, cell goal_pocket_code, int goal_balance) = load_storage();
     (int query_id, int goal_id, int unlock_amount, int target_amount, int start_time,
         int duration) = (in_msg_body~load_uint(64), in_msg_body~load_uint(64),
-                            in_msg_body~load_coins(), in_msg_body~load_uint(32),
-                                in_msg_body~load_uint(32));
+                            in_msg_body~load_coins(), in_msg_body~load_coins(),
+                                in_msg_body~load_uint(32), in_msg_body~load_uint(32));
 
-    slice gp_address = calculate_goal_pocket_address(goal_id, target_amount, owner_address, start_time, duration);
-    throw_unless(INVALID_CALLER, equal_slices(sender_address, gp_address));
+    slice gp_address = calculate_goal_pocket_address(goal_id, target_amount, goal_pocket_code, owner_address, start_time, duration);
+    throw_unless(INVALID_CALLER, equal_slices_bits(sender_address, gp_address));
 
     goal_balance -= unlock_amount;
     spendable_balance += unlock_amount;
-    save_storage(spendable_balance, owner_address, jetton_master_address, jetton_wallet_code, goal_balance);
+    save_storage(spendable_balance, owner_address, jetton_master_address, jetton_wallet_code, goal_pocket_code, goal_balance);
 
     if ((owner_address.preload_uint(2) != 0) & (msg_value > 0)) {
         cell msg = begin_cell()
@@ -184,7 +183,7 @@
 
 () on_bounce (slice in_msg_body) impure {
     in_msg_body~skip_bits(32);
-    (int spendable_balance, slice owner_address, slice jetton_master_address, cell jetton_wallet_code, int goal_balance) = load_storage();
+    (int spendable_balance, slice owner_address, slice jetton_master_address, cell jetton_wallet_code, cell goal_pocket_code, int goal_balance) = load_storage();
     int op = in_msg_body~load_uint(32);
     throw_unless(709, (op == op::internal_transfer) | (op == op::burn_notification) | (op == op::add));
     int query_id = in_msg_body~load_uint(64);
@@ -193,7 +192,7 @@
         goal_balance -= jetton_amount; ;; Unlock tokens
     } 
     spendable_balance += jetton_amount;
-    save_storage(spendable_balance, owner_address, jetton_master_address, jetton_wallet_code, goal_balance);
+    save_storage(spendable_balance, owner_address, jetton_master_address, jetton_wallet_code, goal_pocket_code, goal_balance);
 }
 
 
@@ -214,7 +213,7 @@
     cs~load_coins();    ;; skip value
     cs~skip_bits(1);    ;; skip extracurrencry collection
     cs~load_coins();    ;; skip ihr_fee
-    ;; int fwd_fee = cs~load_coins();
+    int fwd_fee = cs~load_coins();
 
     int op = in_msg_body~load_uint(32);
 
@@ -233,7 +232,7 @@
         return ();
     }
 
-    if (op == op::unlock_tokens) {
+    if (op == op::unlock) {
         unlock_tokens(in_msg_body, sender_address, msg_value, fwd_fee);
         return ();
     }

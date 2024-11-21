@@ -1,4 +1,4 @@
-cell pack_pocket_wallet_data(int goal_id, int target_amount, owner_address, int start_time, int duration) inline {
+cell pack_goal_pocket_data(int goal_id, int target_amount, slice owner_address, int start_time, int duration) inline {
     return begin_cell()
             .store_uint(goal_id, 64)
             .store_coins(0)
@@ -7,14 +7,14 @@ cell pack_pocket_wallet_data(int goal_id, int target_amount, owner_address, int 
             .store_slice(my_address())
             .store_uint(start_time, 32)
             .store_uint(duration, 32)
-           .end_cell();
+        .end_cell();
 }
 
-slice calculate_goal_pocket_address(int goal_id, int target_amount, slice owner_address, int start_time, int duration) inline {
+slice calculate_goal_pocket_address(int goal_id, int target_amount, cell goal_pocket_code, slice owner_address, int start_time, int duration) inline {
     cell state_init = begin_cell()
             .store_uint(0, 2)
             .store_dict(goal_pocket_code)
-            .store_dict(pack_pocket_wallet_data(goal_id, target_amount, owner_address, start_time, duration))
+            .store_dict(pack_goal_pocket_data(goal_id, target_amount, owner_address, start_time, duration))
             .store_uint(0, 1)
            .end_cell();
     return begin_cell()
@@ -24,18 +24,20 @@ slice calculate_goal_pocket_address(int goal_id, int target_amount, slice owner_
            .end_cell().begin_parse();
 }
 
-() send_update_goal_message(int amount, slice owner_address, cell custom_payload) impure {
-    int goal_id = custom_payload.udict_get?(16, GOAL_ID);
-    int target_amount = custom_payload.udict_get?(16, TARGET_AMOUNT);
-    int start_time = custom_payload.udict_get?(16, START_TIME);
-    int duration = custom_payload.udict_get?(16, DURATION);
+() send_update_goal_message(int amount, int query_id, cell goal_pocket_code, slice owner_address, slice response_address, cell custom_payload) impure {
+    slice cs = custom_payload.begin_parse();
+    int goal_id = cs~load_uint(32);
+    int target_amount = cs~load_coins();
+    int start_time = cs~load_uint(32);
+    int duration = cs~load_uint(32);
 
-    slice gp_address = calculate_goal_pocket_address(goal_id, target_amount, owner_address, start_time, duration);
+    slice gp_address = calculate_goal_pocket_address(goal_id, target_amount, goal_pocket_code, owner_address, start_time, duration);
 
     cell msg_body = begin_cell()
         .store_uint(op::add, 32)
         .store_uint(query_id, 64)
         .store_coins(amount)
+        .store_slice(response_address)
        .end_cell();
     send_simple_message(0, gp_address, msg_body, 64);
 }
