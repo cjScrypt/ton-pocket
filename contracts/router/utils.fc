@@ -4,6 +4,7 @@ cell pack_mint_data(slice usdt_address) inline {
             .store_slice(my_address())
             .store_slice(usdt_address)
             .store_ref(storage::pocket_wallet_code)
+            .store_ref(storage::goal_pocket_code)
            .end_cell();
 }
 
