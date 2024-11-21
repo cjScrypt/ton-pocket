@@ -1,9 +1,14 @@
 import { Address, beginCell, Cell, Contract, contractAddress, ContractProvider, Sender, SendMode } from '@ton/core';
+import { data } from "../contracts/router";
 
-export type RouterConfig = {};
+export type RouterConfig = {
+    goalPocketCode: Cell;
+    mintCode: Cell;
+    pocketWalletCode: Cell;
+};
 
 export function routerConfigToCell(config: RouterConfig): Cell {
-    return beginCell().endCell();
+    return data(config);
 }
 
 export class Router implements Contract {
