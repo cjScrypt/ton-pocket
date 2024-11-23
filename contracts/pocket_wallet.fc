@@ -101,7 +101,7 @@
         spendable_balance += jetton_amount;
     } else {
         goal_balance += jetton_amount;
-        send_update_goal_message(jetton_amount, query_id, goal_pocket_code, owner_address, custom_payload);
+        send_update_goal_message(jetton_amount, query_id, goal_pocket_code, owner_address, response_address, custom_payload);
     }
 
     if ((response_address.preload_uint(2) != 0) & (msg_value > 0)) {
@@ -238,4 +238,9 @@
     }
 
     throw(WRONG_OP);
+}
+
+
+(int, slice, slice, cell, cell, int) get_pocket_wallet_data() method_id {
+    return load_storage();
 }
