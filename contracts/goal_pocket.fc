@@ -67,3 +67,7 @@
         send_simple_message(0, pocket_wallet_address, msg_body, 64);
     }
 }
+
+(int, int, int, slice, slice, int, int) get_goal_pocket_data() method_id {
+    return load_storage();
+}

@@ -10,7 +10,7 @@
         .store_coins(target)
         .store_slice(owner_address)
         .store_slice(pocket_wallet_address)
-        .store_uint(start_time, 32)
+        .store_uint(start_time, 64)
         .store_uint(duration, 32)
       .end_cell()
     );

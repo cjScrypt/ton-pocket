@@ -9,7 +9,7 @@ export function data(params: { goalId: bigint, target: bigint, ownerAddress: Add
         .storeCoins(params.target)
         .storeAddress(params.ownerAddress)
         .storeAddress(params.pocketWalletAddress)
-        .storeUint(params.startTime, 32)
+        .storeUint(params.startTime, 64)
         .storeUint(params.duration, 32)
     .endCell();
 }
