@@ -11,7 +11,21 @@ export function data(params: { goalPocketCode: Cell, mintCode: Cell, pocketWalle
 }
 
 
-export function fundUser(params: {
+export function fundUserPayload(params: {
+    recipientAddress: Address,
+    customPayload: Cell | null
+}): Cell {
+    let forwardPayload = beginCell()
+        .storeUint(2104, 32)
+        .storeAddress(params.recipientAddress);
+    if (params.customPayload) {
+        forwardPayload.storeRef(params.customPayload);
+    }
+
+    return forwardPayload.endCell();
+}
+
+export function transferUsdt(params: {
     amount: bigint,
     recipientAddress: Address,
     routerAddress: Address,
@@ -19,13 +33,7 @@ export function fundUser(params: {
     forwardTonAmount: bigint,
     customPayload: Cell | null
 }): Cell {
-    let forwardPayload = beginCell()
-        .storeUint(2104, 32)
-        .storeAddress(params.recipientAddress)
-    if (params.customPayload) {
-        forwardPayload.storeRef(params.customPayload);
-    }
-    forwardPayload.endCell();
+    const forwardPayload = fundUserPayload({ recipientAddress: params.recipientAddress , customPayload: null })
 
     return beginMessage({ op: BigInt(0xf8a7ea5) })
         .storeCoins(params.amount)
@@ -49,7 +57,7 @@ export function fundGoal(
         .storeUint(goalParams.duration, 32)
     .endCell();
 
-    return fundUser({
+    return transferUsdt({
         amount: params.amount, recipientAddress: params.recipientAddress,
         routerAddress: params.routerAddress, senderAddress: params.senderAddress,
         forwardTonAmount: params.forwardTonAmount, customPayload: goalCustomPayload

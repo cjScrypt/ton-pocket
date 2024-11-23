@@ -55,3 +55,12 @@ slice get_wallet_address(slice owner_address) method_id {
     load_storage();
     return calculate_user_pocket_wallet_address(owner_address, my_address(), storage::pocket_wallet_code, storage::goal_pocket_code);
 }
+
+(int, slice, cell) get_mint_data() method_id {
+    load_storage();
+    return (
+        storage::total_supply,
+        storage::router_address,
+        storage::pocket_wallet_code
+    );
+}
